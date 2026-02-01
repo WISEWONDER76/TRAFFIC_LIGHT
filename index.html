@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PictoBlox Traffic Light Quiz</title>
+  <style>
+    body {
+      font-family: "Comic Sans MS", "Arial Rounded MT", Arial, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fff9c4);
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      color: #333;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+    }
+
+    .hidden { display: none; }
+
+    .big-input {
+      font-size: 18px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #4c97ff;
+      width: 220px;
+      margin: 6px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      border-radius: 14px;
+      border: none;
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover { background: #43a047; }
+
+    .quiz-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      min-height: 500px;
+    }
+
+    /* PictoBlox-like blocks */
+    .block {
+      padding: 12px;
+      border-radius: 14px;
+      margin: 8px 0;
+      color: #fff;
+      cursor: grab;
+      font-size: 15px;
+      user-select: none;
+    }
+    .event { background: #f4c20d; color:#000; }
+    .control { background: #ff8c1a; }
+    .arduino { background: #4c97ff; }
+
+    .dropzone {
+      min-height: 420px;
+      padding: 12px;
+      border: 4px dashed #9e9e9e;
+      border-radius: 16px;
+      background: #f1f8ff;
+    }
+
+    .dropzone.over {
+      border-color: #4c97ff;
+      background: #e3f2fd;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚦 Traffic Light Coding Quiz 🚦</h1>
+
+<div id="step1" class="card">
+  <h2>Step 1: Your Details</h2>
+  <p>Type your name and grade, then click <b>Next</b>.</p>
+  <input class="big-input" type="text" id="studentName" placeholder="Your Name" />
+  <input class="big-input" type="text" id="studentGrade" placeholder="Grade" />
+  <br>
+  <button onclick="goToInstructions()">Next ➡️</button>
+</div>
+
+<div id="step2" class="card hidden">
+  <h2>Step 2: How to Play</h2>
+  <ol>
+    <li>Drag the colorful blocks to make a <b>traffic light</b>.</li>
+    <li>You can move blocks <b>back and forth</b> anytime.</li>
+    <li>Use <b>all 14 blocks</b>.</li>
+    <li>When finished, click <b>Check My Work</b>.</li>
+  </ol>
+  <button onclick="goToQuiz()">Start Quiz 🚀</button>
+</div>
+
+<div id="step3" class="quiz-container hidden">
+  <!-- Mixed blocks -->
+  <div class="panel">
+    <h3>Mixed Blocks</h3>
+    <div id="blocks">
+      <!-- NOTE: 6 wait blocks total (2 were missing before – now fixed) -->
+      <div class="block arduino" draggable="true">set digital pin 12 output as LOW</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block arduino" draggable="true">set digital pin 13 output as HIGH</div>
+      <div class="block arduino" draggable="true">set digital pin 11 output as HIGH</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block arduino" draggable="true">set digital pin 13 output as LOW</div>
+      <div class="block control" draggable="true">forever</div>
+      <div class="block arduino" draggable="true">set digital pin 12 output as HIGH</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block arduino" draggable="true">set digital pin 11 output as LOW</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block control" draggable="true">wait 1 seconds</div>
+      <div class="block event" draggable="true">when flag clicked</div>
+    </div>
+  </div>
+
+  <!-- Drop area -->
+  <div class="panel">
+    <h3>Arrange Blocks Here (Traffic Light Code)</h3>
+    <div id="dropzone" class="dropzone"></div>
+  </div>
+</div>
+
+<div class="card" style="text-align:center;">
+  <button onclick="checkAnswer()">✅ Check My Work</button>
+  <p id="scoreOutput" style="font-size:18px;"></p>
+</div>
+
+<script>
+  const blocks = document.querySelectorAll('.block');
+  const dropzone = document.getElementById('dropzone');
+  const blocksZone = document.getElementById('blocks');
+  let dragged = null;
+
+  const correctOrder = [
+    'when flag clicked','forever','set digital pin 13 output as HIGH','wait 1 seconds','set digital pin 13 output as LOW','wait 1 seconds','set digital pin 12 output as HIGH','wait 1 seconds','set digital pin 12 output as LOW','wait 1 seconds','set digital pin 11 output as HIGH','wait 1 seconds','set digital pin 11 output as LOW','wait 1 seconds'
+  ];
+
+  blocks.forEach(block => {
+    block.addEventListener('dragstart', () => {
+      dragged = block;
+      setTimeout(() => block.style.display = 'none', 0);
+    });
+    block.addEventListener('dragend', () => {
+      block.style.display = 'block';
+      dragged = null;
+    });
+  });
+
+  [dropzone, blocksZone].forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      if (dragged) zone.appendChild(dragged);
+    });
+  });
+
+  function goToInstructions(){
+    document.getElementById('step1').classList.add('hidden');
+    document.getElementById('step2').classList.remove('hidden');
+  }
+
+  function goToQuiz(){
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step3').classList.remove('hidden');
+  }
+
+  function checkAnswer(){
+    const placed = Array.from(dropzone.children).map(b=>b.textContent.trim());
+    let correct = 0;
+    placed.forEach((t,i)=>{ if(t===correctOrder[i]) correct++; });
+    const score = Math.round((correct/14)*100);
+    const name = studentName.value || 'Student';
+    const grade = studentGrade.value || 'N/A';
+    scoreOutput.innerHTML = `🎉 <b>${name}</b> (Grade ${grade}) scored <b>${score}%</b><br>${correct} / 14 blocks correct`;
+  }
+</script>
+
+</body>
+</html>
